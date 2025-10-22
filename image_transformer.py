@@ -29,7 +29,7 @@ def fast_pixel_mapping(source_img, target_img):
 
     return pixel_positions.reshape((h, w)), source_flat
 
-def create_transition_video(mapping, source_pixels, shape, output="transition.mp4", steps=30, fps=30):
+def create_transition_video(mapping, source_pixels, shape, output="transition.mp4", steps=30, fps=30, hold_duration_sec=2):
     h, w = shape
     num_pixels = h * w
 
@@ -42,6 +42,8 @@ def create_transition_video(mapping, source_pixels, shape, output="transition.mp
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     video = cv2.VideoWriter(output, fourcc, fps, (w, h))
 
+    hold_frames = int(hold_duration_sec * fps)
+
     for step in range(steps):
         alpha = step / (steps - 1)
         interp_coords = (1 - alpha) * start_coords + alpha * end_coords
@@ -53,7 +55,16 @@ def create_transition_video(mapping, source_pixels, shape, output="transition.mp
 
         video.write(cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
 
+        # Hold first and last image
+        if step == steps - 1 or step == 0:
+            for _ in range(hold_frames):
+                video.write(cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
+
+    # Hold the final frame for `hold_duration_sec` seconds
+    
+
     video.release()
+
 
 
 MAX_SIZE = 512  # max dimension to resize to
@@ -63,4 +74,4 @@ target_img = load_and_resize_image("2.jpg", MAX_SIZE)
 
 mapping, source_pixels = fast_pixel_mapping(source_img, target_img)
 
-create_transition_video(mapping, source_pixels, source_img.shape[:2], output="transition.mp4", steps=300, fps=30)
+create_transition_video(mapping, source_pixels, source_img.shape[:2], output="transition.mp4", steps=300, fps=30, hold_duration_sec=2)
