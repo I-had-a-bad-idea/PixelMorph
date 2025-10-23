@@ -8,6 +8,17 @@ Transforms one image into another by rearranging pixels and outputting a transit
 - Produces an MP4 video (mp4v codec) showing the transformation.
 - Simple single-file script (image_transformer.py).
 
+## Example
+
+| **Starting Image** | **Target Image** |
+|:------------------:|:----------------:|
+| <img src="example/Chicago_night.jpg" width="300"/> | <img src="example/Chicago_day.jpg" width="300"/> |
+
+
+### Transformation Video Preview
+
+![video](https://github.com/user-attachments/assets/4ba40855-dd06-4c36-8db5-cbddc904d56f)
+
 ## Requirements
 - Python 3.8+
 - numpy
