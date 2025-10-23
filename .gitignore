@@ -8,6 +8,7 @@ __pycache__/
 
 *.jpg
 *.mp4
+file.txt
 
 # Distribution / packaging
 .Python

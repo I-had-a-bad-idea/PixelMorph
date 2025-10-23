@@ -35,8 +35,7 @@ def fast_pixel_mapping(source_img, target_img):
     mapping[target_order] = source_order
     return mapping.reshape(source_img.shape[:2]), source_flat
 
-def create_transition_video(mapping, source_pixels, shape, output="transition.mp4",
-                            steps=30, fps=30, hold_duration_sec=2):
+def create_transition_video(mapping, source_pixels, shape, output="transition.mp4", steps=30, fps=30, hold_duration_sec=2.0):
     h, w = shape
     num_pixels = h * w
     hold_frames = int(hold_duration_sec * fps)
@@ -48,9 +47,11 @@ def create_transition_video(mapping, source_pixels, shape, output="transition.mp
     video = cv2.VideoWriter(output, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
     frame = np.zeros((h, w, 3), dtype=np.uint8)
 
+    all_interp = np.linspace(coords, end_coords, steps).round().astype(np.int32)
+
     for step in range(steps):
         alpha = step / (steps - 1)
-        interp = np.round((1 - alpha) * coords + alpha * end_coords).astype(int)
+        interp = all_interp[step]
         interp[:, 0] = np.clip(interp[:, 0], 0, h - 1)
         interp[:, 1] = np.clip(interp[:, 1], 0, w - 1)
 
@@ -73,15 +74,17 @@ def main():
     print("Loading images...")
     source_img = load_and_resize_image(img_1_path, MAX_SIZE)
     target_img = load_and_resize_image(img_2_path, MAX_SIZE)
+    print(f"Images loaded in {time.time() - t0:.2f}s")
 
     print("Computing pixel mapping...")
     t1 = time.time()
     mapping, source_pixels = fast_pixel_mapping(source_img, target_img)
     print(f"Mapping done in {time.time() - t1:.2f}s")
 
+    t2 = time.time()
     print("Generating video...")
-    create_transition_video(mapping, source_pixels, source_img.shape[:2],
-                            output=output_video_path, steps=150, fps=30, hold_duration_sec=1)
+    create_transition_video(mapping, source_pixels, source_img.shape[:2], output=output_video_path, steps=300, fps=30, hold_duration_sec=2.0)
+    print(f"Video generated in {time.time() - t2:.2f}s")
     print(f"Video saved to {output_video_path}")
     print(f"Total time: {time.time() - t0:.2f}s")
 
