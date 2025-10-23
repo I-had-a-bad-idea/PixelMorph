@@ -17,7 +17,7 @@ Transforms one image into another by rearranging pixels and outputting a transit
 
 ### Transformation Video Preview
 
-![video](https://github.com/user-attachments/assets/4ba40855-dd06-4c36-8db5-cbddc904d56f)
+https://github.com/user-attachments/assets/565dd2ef-45c4-43ae-b01a-57a028d65472
 
 ## Requirements
 - Python 3.8+
