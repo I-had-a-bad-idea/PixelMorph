@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 from PIL import Image
 import cv2
 
@@ -65,13 +66,22 @@ def create_transition_video(mapping, source_pixels, shape, output="transition.mp
 
     video.release()
 
+def main():
+    img_1_path = sys.argv[1]
+    img_2_path = sys.argv[2]
+    output_video_path = sys.argv[3]
 
+    MAX_SIZE = 512  # max dimension to resize to
+    print("Loading and resizing images...", end="\r")
+    source_img = load_and_resize_image(img_1_path, MAX_SIZE)
+    target_img = load_and_resize_image(img_2_path, MAX_SIZE)
 
-MAX_SIZE = 512  # max dimension to resize to
+    print("Computing pixel mapping...", end="\r")
+    mapping, source_pixels = fast_pixel_mapping(source_img, target_img)
+    print("Creating transition video...", end="\r")
+    create_transition_video(mapping, source_pixels, source_img.shape[:2], output=output_video_path, steps=300, fps=30, hold_duration_sec=2)
+    print(f"Video saved to {output_video_path}", end="\n")
 
-source_img = load_and_resize_image("1.jpg", MAX_SIZE)
-target_img = load_and_resize_image("2.jpg", MAX_SIZE)
+if __name__ == "__main__":
+    main()
 
-mapping, source_pixels = fast_pixel_mapping(source_img, target_img)
-
-create_transition_video(mapping, source_pixels, source_img.shape[:2], output="transition.mp4", steps=300, fps=30, hold_duration_sec=2)
