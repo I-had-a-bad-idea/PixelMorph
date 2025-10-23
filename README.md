@@ -1,4 +1,4 @@
-# Image-Transformer
+# PixelMorph
 
 Transforms one image into another by rearranging pixels and outputting a transition video.
 
@@ -6,7 +6,7 @@ Transforms one image into another by rearranging pixels and outputting a transit
 - Computes a brightness-based pixel mapping between two images.
 - Interpolates pixel positions to generate a smooth transition.
 - Produces an MP4 video (mp4v codec) showing the transformation.
-- Simple single-file script (image_transformer.py).
+- Simple single-file script (pixelmorph.py).
 
 ## Example
 
@@ -33,12 +33,12 @@ pip install numpy opencv-python
 From the repository root (Windows CMD / PowerShell):
 
 ```
-python image_transformer.py <source_image> <target_image> <output_video.mp4>
+python pixelmorph.py <source_image> <target_image> <output_video.mp4>
 ```
 
 Example:
 ```
-python image_transformer.py .\images\source.jpg .\images\target.jpg video.mp4
+python pixelmorph.py .\images\source.jpg .\images\target.jpg video.mp4
 ```
 
 ## Notes
