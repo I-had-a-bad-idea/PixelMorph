@@ -2,6 +2,8 @@ import numpy as np
 import cv2
 import time
 import sys
+import os
+import concurrent.futures
 
 def load_and_resize_image(path, size):
     img = cv2.imread(path)
@@ -19,7 +21,7 @@ def load_and_resize_image(path, size):
 
     return padded
 
-def fast_pixel_mapping(source_img, target_img):
+def pixel_mapping(source_img, target_img):
     # Flatten and compute brightness for sorting
     source_flat = source_img.reshape(-1, 3)
     target_flat = target_img.reshape(-1, 3)
@@ -35,34 +37,47 @@ def fast_pixel_mapping(source_img, target_img):
     mapping[target_order] = source_order
     return mapping.reshape(source_img.shape[:2]), source_flat
 
-def create_transition_video(mapping, source_pixels, shape, output="transition.mp4", steps=30, fps=30, hold_duration_sec=2.0):
+def create_transition_video(mapping, source_pixels, shape, output="transition.mp4", steps=30, fps=30, hold_duration_sec=2.0, workers=None):
     h, w = shape
-    num_pixels = h * w
     hold_frames = int(hold_duration_sec * fps)
 
     ys, xs = np.mgrid[0:h, 0:w]
-    coords = np.column_stack((ys.ravel(), xs.ravel()))
-    end_coords = coords[np.argsort(mapping.ravel())]
+    coords = np.column_stack((ys.ravel(), xs.ravel())).astype(np.float32)
+    end_coords = coords[np.argsort(mapping.ravel())].astype(np.float32)
 
     video = cv2.VideoWriter(output, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-    frame = np.zeros((h, w, 3), dtype=np.uint8)
 
-    all_interp = np.linspace(coords, end_coords, steps).round().astype(np.int32)
+    # Determine worker count
+    max_workers = workers or os.cpu_count() or 1
 
-    for step in range(steps):
-        alpha = step / (steps - 1)
-        interp = all_interp[step]
+    def generate_frame(step_index: int):
+        t = step_index / float(steps - 1)
+        interp = np.rint(coords + (end_coords - coords) * t).astype(np.int32)
         interp[:, 0] = np.clip(interp[:, 0], 0, h - 1)
         interp[:, 1] = np.clip(interp[:, 1], 0, w - 1)
 
-        frame.fill(0)
+        frame = np.zeros((h, w, 3), dtype=np.uint8)
+        # assign flattened source pixels into the frame at interpolated coords
         frame[interp[:, 0], interp[:, 1]] = source_pixels
         bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        video.write(bgr)
+        return bgr
 
-        if step == 0 or step == steps - 1:
-            for _ in range(hold_frames):
-                video.write(bgr)
+    # Submit frame generation tasks
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as ex:
+        futures = [ex.submit(generate_frame, step) for step in range(steps)]
+
+        # Write frames in order to preserve timing and hold frames for first/last
+        for step in range(steps):
+            bgr = futures[step].result()
+            video.write(bgr)
+
+            if step == 0 or step == steps - 1:
+                for _ in range(hold_frames):
+                    video.write(bgr)
+
+            # simple progress indicator every 10% or final
+            if (step + 1) % max(1, steps // 10) == 0 or step == steps - 1:
+                print(f"Wrote frame {step+1}/{steps}")
 
     video.release()
 
@@ -78,7 +93,7 @@ def main():
 
     print("Computing pixel mapping...")
     t1 = time.time()
-    mapping, source_pixels = fast_pixel_mapping(source_img, target_img)
+    mapping, source_pixels = pixel_mapping(source_img, target_img)
     print(f"Mapping done in {time.time() - t1:.2f}s")
 
     t2 = time.time()
