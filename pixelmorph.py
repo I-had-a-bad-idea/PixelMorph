@@ -5,6 +5,11 @@ import sys
 import os
 import concurrent.futures
 
+STEPS = 300
+FPS = 30
+HOLD_DURATION = 2.0
+MAX_SIZE = 512
+
 def load_and_resize_image(path, size):
     img = cv2.imread(path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -83,7 +88,6 @@ def create_transition_video(mapping, source_pixels, shape, output="transition.mp
 
 def main():
     img_1_path, img_2_path, output_video_path = sys.argv[1:4]
-    MAX_SIZE = 512
 
     t0 = time.time()
     print("Loading images...")
@@ -98,7 +102,7 @@ def main():
 
     t2 = time.time()
     print("Generating video...")
-    create_transition_video(mapping, source_pixels, source_img.shape[:2], output=output_video_path, steps=300, fps=30, hold_duration_sec=2.0)
+    create_transition_video(mapping, source_pixels, source_img.shape[:2], output=output_video_path, steps=STEPS, fps=FPS, hold_duration_sec=HOLD_DURATION)
     print(f"Video generated in {time.time() - t2:.2f}s")
     print(f"Video saved to {output_video_path}")
     print(f"Total time: {time.time() - t0:.2f}s")
