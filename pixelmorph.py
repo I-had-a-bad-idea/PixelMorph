@@ -49,19 +49,22 @@ def create_transition_video(mapping, source_pixels, shape, output="transition.mp
     ys, xs = np.mgrid[0:h, 0:w]
     coords = np.column_stack((ys.ravel(), xs.ravel())).astype(np.float32)
     end_coords = coords[np.argsort(mapping.ravel())].astype(np.float32)
+    delta = end_coords - coords
 
     video = cv2.VideoWriter(output, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
 
     # Determine worker count
     max_workers = workers or os.cpu_count() or 1
 
+    frame = np.zeros((h, w, 3), dtype=np.uint8)
     def generate_frame(step_index: int):
         t = step_index / float(steps - 1)
-        interp = np.rint(coords + (end_coords - coords) * t).astype(np.int32)
+        interp = coords + delta * t
+        interp = np.rint(interp).astype(np.int32)
         interp[:, 0] = np.clip(interp[:, 0], 0, h - 1)
         interp[:, 1] = np.clip(interp[:, 1], 0, w - 1)
 
-        frame = np.zeros((h, w, 3), dtype=np.uint8)
+        frame.fill(0)
         # assign flattened source pixels into the frame at interpolated coords
         frame[interp[:, 0], interp[:, 1]] = source_pixels
         bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
